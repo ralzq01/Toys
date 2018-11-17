@@ -21,7 +21,7 @@
  *               be covered.
  *  Notice: number of `read` call and number of `consume` call
  *          should be equal. You can first call multiple `read` then
- *          call multiple consume. But be sure continues `read` may
+ *          call multiple consume. But be aware continues `read` may
  *          cause a dead lock because the buffer is full (not consumed)
  */
 class RingBuffer{
