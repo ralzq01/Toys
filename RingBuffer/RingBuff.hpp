@@ -12,7 +12,7 @@
 #include <assert.h>
 
 
-/*! brief RingBuffer for transfering data between two threads
+/*! \brief RingBuffer for transfering data between two threads
  *  Only support 1 consumer and 1 producer
  *  3 operations:
  *    `write`: for producer putting data into buffer
