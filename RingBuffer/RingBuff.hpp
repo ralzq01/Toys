@@ -33,16 +33,22 @@ class RingBuffer{
 
   explicit RingBuffer(std::size_t buffer_size);
 
-  /* \brief push a buffer into RingBuffer
-   * Thread safe
+  /*! \brief write a buffer into RingBuffer
+   *  Thread safe
    */
   void write(void* buffer, std::size_t size);
 
-  /* \brief pop a bufer from RingBuffer
-   * Thread safe
+  /*! \brief read a buffer from RingBuffer
+   *  Get a buffer ptr and it's size withou copy
    */
   void read(void** buffer, std::size_t& size);
 
+  /*! \brief notification a buffer has been consumed
+   *  Indicate that the content of read buffer is useless
+   *  so this buffer's content can be covered.
+   *  Make sure this func should be called after `read`
+   *  and number of `consume` and `read` should be equal.
+   */
   void consume();
 
   ~RingBuffer();
