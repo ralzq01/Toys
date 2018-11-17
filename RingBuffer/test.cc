@@ -1,6 +1,6 @@
 #include "RingBuff.hpp"
 
-const int kBufferSize = 1 << 20; // set to 512B
+const int kBufferSize = 1 << 10; // set to 1MB
 std::queue<void*> gen_buffer;
 std::queue<std::size_t> send_size;
 std::queue<void*> recv_buffer;
@@ -11,7 +11,7 @@ void producer(){
     // randomly generate data
     while(total < (1 << 15)){
         std::size_t random_size = rand() % (1 << 10);
-        char* random_buff = new char[random_size];
+        char* random_buff = static_cast<char*>(std::malloc(random_size));
         for(std::size_t i = 0; i < random_size; ++i){
             random_buff[i] = rand() % 128;
         }
@@ -25,7 +25,7 @@ void producer(){
     }
     char end = 0;
     ring.write((void*)(&end), 0);
-    printf("[Producer]: Total Sending Data: %zu bytes\n", total);
+    printf("[Producer]: Total Sent Data: %zu bytes\n", total);
 }
 
 void consumer(){
@@ -40,7 +40,7 @@ void consumer(){
         }
         printf("[Consumer]: Recving buffer size of %zu bytes\n", recv);
         // data handle part
-        char* buff = new char[recv];
+        char* buff = static_cast<char*>(std::malloc(recv));
         if(buffer == nullptr){
             std::cerr << "error" << std::endl;
         }
@@ -50,7 +50,7 @@ void consumer(){
         ring.consume();
         total += recv;
     }
-    printf("[Consumer]: Total Recving Data: %zu bytes\n", total);
+    printf("[Consumer]: Total Recved Data: %zu bytes\n", total);
 }
 
 void verify(){
@@ -65,17 +65,19 @@ void verify(){
         std::cerr << "Error: sending num != recv num" << std::endl;
     }
     std::size_t check_size = gen_size < recv_size ? gen_size : recv_size;
-    for(std::size_t idx; idx < check_size; ++idx){
+    for(std::size_t idx = 0; idx < check_size; ++idx){
         void* p_gen = gen_buffer.front();
         void* p_recv = recv_buffer.front();
         int diff = memcmp(p_gen, p_recv, send_size.front());
         if(diff != 0){
-            printf("Error: %zu-th buffer is different\n", idx);
+            printf("Error: %zu-th buffer is different\n", idx + 1);
             exit(-2);
         }
-        free(p_gen);
-        free(p_recv);
+        std::free(p_gen);
+        std::free(p_recv);
         send_size.pop();
+        gen_buffer.pop();
+        recv_buffer.pop();
     }
     printf("All buffer has been verified correct\n");
 }

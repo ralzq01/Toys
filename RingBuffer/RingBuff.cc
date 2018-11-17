@@ -42,6 +42,7 @@ void RingBuffer::write(void* buffer, std::size_t size){
     memcpy((void*)((char*)buffer_ + real_ofs), buffer, first_part);
     memcpy(buffer_, (void*)((char*)buffer + first_part), second_part);
   }
+  // update
   ofs_writer_ += size;
   wait_read_.push(size);
   not_empty_.notify_all();
@@ -49,23 +50,27 @@ void RingBuffer::write(void* buffer, std::size_t size){
 }
 
 void RingBuffer::read(void** buffer, std::size_t& size){
-  std::unique_lock<std::mutex> lock(mtx_);
+  //std::unique_lock<std::mutex> lock(mtx_);
   while(wait_read_.empty()){
     // empty
-    not_empty_.wait(lock);
+    //not_empty_.wait(lock);
   }
   size = wait_read_.front();
-  std::size_t real_ofs = ofs_reader_ % buffer_size_;
-  if(buffer_size_ - real_ofs >= size){
-    *buffer = (void*)((char*)buffer_ + real_ofs);
+  ofs_reader_ = ofs_reader_ % buffer_size_;
+  // if buffer is continous, return the buffer address
+  if(buffer_size_ - ofs_reader_ >= size){
+    *buffer = (void*)((char*)buffer_ + ofs_reader_);
   }
+  // if buffer is not continous, allocate a new buffer and 
+  // copy data into new buffer to make it continous.
+  // I think there exists a more elegant way to do this
   else{
     void* temp = nullptr;
     temp = static_cast<void*>(std::malloc(size));
-    std::size_t first_part = buffer_size_ - real_ofs;
+    std::size_t first_part = buffer_size_ - ofs_reader_;
     std::size_t second_part = size - first_part;
     if(temp){
-      memcpy(temp, (void*)((char*)buffer_ + real_ofs), first_part);
+      memcpy(temp, (void*)((char*)buffer_ + ofs_reader_), first_part);
       memcpy((void*)((char*)temp + first_part), buffer_, second_part);
       alloc_buffer_.push(temp);
       *buffer = temp;
@@ -75,15 +80,22 @@ void RingBuffer::read(void** buffer, std::size_t& size){
       throw std::bad_alloc();
     }
   }
-  lock.unlock();
+  // update
+  wait_read_.pop();
+  wait_consume_.push(size);
+  ofs_reader_ += size;
+  //lock.unlock();
 }
 
 void RingBuffer::consume() {
   std::unique_lock<std::mutex> lock(mtx_);
-  while(items_.empty()){
-    not_empty_.wait(lock);
+  // consume can only be called after `read`
+  // `consume` and `read` shoule be called same times.
+  if(wait_consume_.empty()){
+    std::cerr << "Error: consume call and read call number should match" << std::endl;
+    return;
   }
-  std::size_t size = items_.front();
+  std::size_t size = wait_consume_.front();
   std::size_t real_ofs = ofs_consumer_ % buffer_size_;
   if(real_ofs + size > buffer_size_){
     void* allocated = alloc_buffer_.front();
@@ -91,7 +103,7 @@ void RingBuffer::consume() {
     alloc_buffer_.pop();
   }
   ofs_consumer_ += size;
-  items_.pop();
+  wait_consume_.pop();
   not_full_.notify_all();
   lock.unlock();
 }
