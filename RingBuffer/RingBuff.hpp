@@ -11,6 +11,19 @@
 #include <cstring>
 #include <assert.h>
 
+
+/*! brief RingBuffer for transfering data between two threads
+ *  Only support 1 consumer and 1 producer
+ *  3 operations:
+ *    `write`: for producer putting data into buffer
+ *    `read`: for consumer getting data from buffer (withou copy)
+ *    `consume`: indicate previous data have been consumed and can
+ *               be covered.
+ *  Notice: number of `read` call and number of `consume` call
+ *          should be equal. You can first call multiple `read` then
+ *          call multiple consume. But be sure continues `read` may
+ *          cause a dead lock because the buffer is full (not consumed)
+ */
 class RingBuffer{
 
  public:

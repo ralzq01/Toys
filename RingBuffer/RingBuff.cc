@@ -50,11 +50,7 @@ void RingBuffer::write(void* buffer, std::size_t size){
 }
 
 void RingBuffer::read(void** buffer, std::size_t& size){
-  //std::unique_lock<std::mutex> lock(mtx_);
-  while(wait_read_.empty()){
-    // empty
-    //not_empty_.wait(lock);
-  }
+  while(wait_read_.empty()){}
   size = wait_read_.front();
   ofs_reader_ = ofs_reader_ % buffer_size_;
   // if buffer is continous, return the buffer address
@@ -84,7 +80,6 @@ void RingBuffer::read(void** buffer, std::size_t& size){
   wait_read_.pop();
   wait_consume_.push(size);
   ofs_reader_ += size;
-  //lock.unlock();
 }
 
 void RingBuffer::consume() {

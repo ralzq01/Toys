@@ -1,6 +1,7 @@
 #include "RingBuff.hpp"
+#include <time.h>
 
-const int kBufferSize = 1 << 10; // set to 1MB
+const int kBufferSize = 1 << 20; // set to 1MB
 std::queue<void*> gen_buffer;
 std::queue<std::size_t> send_size;
 std::queue<void*> recv_buffer;
@@ -10,7 +11,7 @@ void producer(){
     std::size_t total = 0;
     // randomly generate data
     while(total < (1 << 15)){
-        std::size_t random_size = rand() % (1 << 10);
+        std::size_t random_size = (rand() % (1 << 10)) + 1;
         char* random_buff = static_cast<char*>(std::malloc(random_size));
         for(std::size_t i = 0; i < random_size; ++i){
             random_buff[i] = rand() % 128;
@@ -83,7 +84,7 @@ void verify(){
 }
 
 int main(){
-
+    srand((unsigned)time(NULL));
     std::thread prod(producer);
     std::thread cons(consumer);
     prod.join();
