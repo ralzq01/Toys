@@ -43,9 +43,11 @@ class RingBuffer{
   std::condition_variable not_empty_;
 
   std::size_t ofs_reader_;
+  std::size_t ofs_consumer_;
   std::size_t ofs_writer_;
 
-  std::queue<std::size_t> items_;
+  std::queue<std::size_t> wait_read_;
+  std::queue<std::size_t> wait_consume_;
   std::queue<void*> alloc_buffer_;
 
   void* buffer_;
