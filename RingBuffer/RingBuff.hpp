@@ -36,7 +36,7 @@ class RingBuffer{
   /*! \brief write a buffer into RingBuffer
    *  Thread safe
    */
-  void write(void* buffer, std::size_t size);
+  void write(const void* buffer, std::size_t size);
 
   /*! \brief read a buffer from RingBuffer
    *  Get a buffer ptr and it's size withou copy

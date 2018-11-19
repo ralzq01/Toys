@@ -19,7 +19,7 @@ RingBuffer::~RingBuffer(){
   }
 }
 
-void RingBuffer::write(void* buffer, std::size_t size){
+void RingBuffer::write(const void* buffer, std::size_t size){
   if(size > buffer_size_){
     std::cerr << "Error: buffer size too large" << std::endl;
     return;
