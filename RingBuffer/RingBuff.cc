@@ -79,6 +79,7 @@ void RingBuffer::read(void** buffer, std::size_t& size){
 
     std::unique_lock<std::mutex> lock(mtx_);
     ofs_consumer_ += size;
+    not_full_.notify_all();
     lock.unlock();
 
     while(wait_read_.empty()) {}

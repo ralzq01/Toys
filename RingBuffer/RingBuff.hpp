@@ -69,7 +69,6 @@ class RingBuffer{
 
   std::queue<std::size_t> wait_read_;
   std::queue<std::size_t> wait_consume_;
-  std::queue<void*> alloc_buffer_;
 
   void* buffer_;
 
