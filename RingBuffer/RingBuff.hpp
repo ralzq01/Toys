@@ -55,6 +55,8 @@ class RingBuffer{
 
  protected:
 
+  void fill(const void* buffer, std::size_t size);
+
   std::size_t buffer_size_;
 
   std::mutex mtx_;
