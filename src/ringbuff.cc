@@ -19,55 +19,29 @@ RingBuffer::~RingBuffer(){
   }
 }
 
-void RingBuffer::fill(const void* buffer, std::size_t size){
-  std::size_t real_ofs = ofs_writer_ % buffer_size_;
-  std::size_t remain = buffer_size_ - real_ofs;
-
-  std::unique_lock<std::mutex> lock(mtx_);
-
-  while(ofs_writer_ + remain - ofs_consumer_ > buffer_size_){
-    // full
-    std::size_t distance = ofs_writer_ - ofs_consumer_;
-    ofs_consumer_ = ofs_consumer_ % buffer_size_;
-    ofs_writer_ = ofs_consumer_ + distance;
-    not_full_.wait(lock);
-  }
-
-  ofs_writer_ += remain;
-  lock.unlock();
-  
-  wait_read_.push(remain);
-  //not_empty_.notify_one();
-  
-  write(buffer, size);
-}
-
 void RingBuffer::write(const void* buffer, std::size_t size){
   if(size > buffer_size_){
     std::cerr << "Error: buffer size too large" << std::endl;
     return;
   }
+
   std::unique_lock<std::mutex> lock(mtx_);
   while(ofs_writer_ + size - ofs_consumer_ > buffer_size_){
     // full
-    std::size_t distance = ofs_writer_ - ofs_consumer_;
-    ofs_consumer_ = ofs_consumer_ % buffer_size_;
-    ofs_writer_ = ofs_consumer_ + distance;
     not_full_.wait(lock);
   }
-  std::size_t real_ofs = ofs_writer_ % buffer_size_;
-  if(buffer_size_ - real_ofs > size){
-    ofs_writer_ += size;
-    lock.unlock();
+  lock.unlock();
 
-    memcpy((void*)((char*)buffer_ + real_ofs), buffer, size);
-    wait_read_.push(size);
-    //not_empty_.notify_one();
+  std::size_t real_ofs = ofs_writer_ % buffer_size_;
+  std::size_t remain = buffer_size_ - real_ofs;
+  if(remain <= size){
+    ofs_writer_ += remain;
+    real_ofs = 0;
+    wait_read_.push(remain);
   }
-  else{
-    lock.unlock();
-    fill(buffer, size);
-  }
+  ofs_writer_ += size;
+  memcpy((void*)((char*)buffer_ + real_ofs), buffer, size);
+  wait_read_.push(size);
 }
 
 void RingBuffer::read(void** buffer, std::size_t& size){
@@ -106,7 +80,7 @@ void RingBuffer::consume() {
 
   std::unique_lock<std::mutex> lock(mtx_);
   ofs_consumer_ += size;
-  not_full_.notify_all();
+  not_full_.notify_one();
   lock.unlock();
 
   wait_consume_.pop();
