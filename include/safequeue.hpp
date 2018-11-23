@@ -1,3 +1,7 @@
+
+#ifndef _SFAEQUEUE_H_
+#define _SFAEQUEUE_H_
+
 #include <queue>
 #include <mutex>
 #include <condition_variable>
@@ -76,3 +80,5 @@ class SafeQueue {
   mutable std::mutex qmtx_;
   std::condition_variable empty_;
 };
+
+#endif
