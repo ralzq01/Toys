@@ -1,4 +1,4 @@
-#include "RingBuff.hpp"
+#include <ringbuff.hpp>
 #include <time.h>
 
 const int kBufferSize = 1 << 25; // set to 32MB

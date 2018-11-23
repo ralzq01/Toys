@@ -11,6 +11,8 @@
 #include <cstring>
 #include <assert.h>
 
+#include <safequeue.hpp>
+
 
 /*! \brief RingBuffer for transfering data between two threads
  *  Only support 1 consumer and 1 producer
@@ -67,7 +69,7 @@ class RingBuffer{
   std::size_t ofs_consumer_;
   std::size_t ofs_writer_;
 
-  std::queue<std::size_t> wait_read_;
+  SafeQueue<std::size_t> wait_read_;
   std::queue<std::size_t> wait_consume_;
 
   void* buffer_;

@@ -1,4 +1,4 @@
-#include "RingBuff.hpp"
+#include <ringbuff.hpp>
 
 RingBuffer::RingBuffer(std::size_t buffer_size)
     : buffer_size_(buffer_size),
@@ -34,9 +34,11 @@ void RingBuffer::fill(const void* buffer, std::size_t size){
   }
 
   ofs_writer_ += remain;
-  wait_read_.push(remain);
-  not_empty_.notify_all();
   lock.unlock();
+  
+  wait_read_.push(remain);
+  //not_empty_.notify_one();
+  
   write(buffer, size);
 }
 
@@ -56,10 +58,11 @@ void RingBuffer::write(const void* buffer, std::size_t size){
   std::size_t real_ofs = ofs_writer_ % buffer_size_;
   if(buffer_size_ - real_ofs > size){
     ofs_writer_ += size;
-    not_empty_.notify_all();
     lock.unlock();
+
     memcpy((void*)((char*)buffer_ + real_ofs), buffer, size);
     wait_read_.push(size);
+    //not_empty_.notify_one();
   }
   else{
     lock.unlock();
@@ -68,35 +71,31 @@ void RingBuffer::write(const void* buffer, std::size_t size){
 }
 
 void RingBuffer::read(void** buffer, std::size_t& size){
-  while(wait_read_.empty()){}
-  size = wait_read_.front();
+  
+  wait_read_.fpop(size);
   ofs_reader_ = ofs_reader_ % buffer_size_;
 
   if(ofs_reader_ + size == buffer_size_){
     // detect empty buffer
-    wait_read_.pop();
     ofs_reader_ = 0;
 
     std::unique_lock<std::mutex> lock(mtx_);
     ofs_consumer_ += size;
-    not_full_.notify_all();
     lock.unlock();
 
-    while(wait_read_.empty()) {}
-    size = wait_read_.front();
+    not_full_.notify_one();
+    wait_read_.fpop(size);
   }
 
   // if buffer is continous, return the buffer address
   *buffer = (void*)((char*)buffer_ + ofs_reader_);
   
   // update
-  wait_read_.pop();
   wait_consume_.push(size);
   ofs_reader_ += size;
 }
 
 void RingBuffer::consume() {
-  std::unique_lock<std::mutex> lock(mtx_);
   // consume can only be called after `read`
   // `consume` and `read` shoule be called same times.
   if(wait_consume_.empty()){
@@ -104,8 +103,11 @@ void RingBuffer::consume() {
     return;
   }
   std::size_t size = wait_consume_.front();
+
+  std::unique_lock<std::mutex> lock(mtx_);
   ofs_consumer_ += size;
-  wait_consume_.pop();
   not_full_.notify_all();
   lock.unlock();
+
+  wait_consume_.pop();
 }
