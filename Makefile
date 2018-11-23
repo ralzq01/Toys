@@ -2,7 +2,7 @@ CXX := g++
 
 # debug info: 1 for enabling debug
 BUILD_DIR := ./build
-DEBUG ?= 1
+DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 	BUILD_DIR := $(BUILD_DIR)/Debug
 	CXXFLAGS += -g
