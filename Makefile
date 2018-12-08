@@ -21,12 +21,15 @@ COMMON_FLAGS := -I$(INCLUDE_DIRS)
 
 .PHONY: all clean
 
-all: ringbuff
+all: ringbuff porter
 
 ringbuff: $(INCLUDE_DIRS)/ringbuff.hpp $(INCLUDE_DIRS)/safequeue.hpp $(SRC_DIRS)/ringbuff.cc
 	mkdir -p $(BUILD_DIR)
 	g++ $(COMMON_FLAGS) $(TEST_DIRS)/test_ringbuff.cc $(SRC_DIRS)/ringbuff.cc $(CXXFLAGS) -o $(BUILD_DIR)/ringbuff
 
+porter: $(INCLUDE_DIRS)/porter.hpp $(INCLUDE_DIRS)/safequeue.hpp $(SRC_DIRS)/porter.cc
+	g++ $(COMMON_FLAGS) $(TEST_DIRS)/test_porter.cc $(SRC_DIRS)/porter.cc $(CXXFLAGS) -o $(BUILD_DIR)/porter
+
 clean:
-	rm -rf BUILD_DIR/
+	rm -rf $(BUILD_DIR)/
 
