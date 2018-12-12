@@ -75,6 +75,11 @@ class SafeQueue {
     return true;
   }
 
+  bool empty() {
+    std::lock_guard<std::mutex> lock(qmtx_);
+    return q_.empty();
+  }
+
  private:
   std::queue<T> q_;
   mutable std::mutex qmtx_;
